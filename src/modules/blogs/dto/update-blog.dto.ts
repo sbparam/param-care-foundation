@@ -43,5 +43,3 @@ export class UpdateBlogDto extends PartialType(CreateBlogDto) {
   )
   public status: BlogStatus;
 }
-
-// title, author, mins_read, description, slug, image, status, createdAt, updatedAt, deletedAt

@@ -18,30 +18,6 @@ export class GalleryService {
     private awsS3Service: AwsS3Service,
   ) {}
 
-  // async findAll(): Promise<Gallery[]> {
-  //   const galleries = await this.galleryRepository.find({
-  //     where: { status: ImageStatus.ACTIVE },
-  //     order: { createdAt: 'DESC' },
-  //   });
-
-  //   for (const gallery of galleries) {
-  //     if (gallery.images && gallery.images.length > 0) {
-  //       gallery.images = await Promise.all(
-  //         gallery.images.map(async (img) => {
-  //           const data = await this.awsS3Service.getPresignedUrlAndImage(
-  //             img,
-  //             'DOWNLOAD',
-  //             60 * 60 * 10,
-  //           );
-  //           return data?.preSignedUrl || img;
-  //         }),
-  //       );
-  //     }
-  //   }
-
-  //   return galleries;
-  // }
-
   async findAll(
     searchInPageKeyword: ISearchInPageKeyword,
   ): Promise<{ galleries: Gallery[]; totalGalleries: number }> {
