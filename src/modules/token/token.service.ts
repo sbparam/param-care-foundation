@@ -56,6 +56,60 @@ export class TokenService {
     );
   }
 
+  // async generateAuthToken(
+  //   userId: number,
+  //   userRole: string,
+  //   userEmail: string,
+  //   user: Auth,
+  // ): Promise<object> {
+  //   const refreshJti: string = uuidv4();
+
+  //   // Calculate expiration times
+  //   const accessTokenExpires = moment().add(
+  //     this.configService.get('JWT_ACCESS_TOKEN_EXPIRES_IN'),
+  //     'minutes',
+  //   );
+  //   const refreshTokenExpires = moment().add(
+  //     this.configService.get('JWT_REFRESH_TOKEN_EXPIRES_IN'),
+  //     'days',
+  //   );
+
+  //   // Prepare secrets and expiration configs
+  //   const accessTokenSecretAndExpiration = {
+  //     secret: this.configService.get('JWT_SECRET'),
+  //     expiresIn: accessTokenExpires.diff(moment(), 'seconds'),
+  //   };
+  //   const refreshTokenSecretAndExpiration = {
+  //     secret: this.configService.get('JWT_REFRESH_SECRET'),
+  //     expiresIn: refreshTokenExpires.diff(moment(), 'seconds'),
+  //   };
+
+  //   // Generate tokens
+  //   const accessToken = await this.generateToken(
+  //     userId,
+  //     userRole,
+  //     accessTokenSecretAndExpiration,
+  //   );
+  //   const refreshToken = await this.generateRefreshToken(
+  //     refreshJti,
+  //     refreshTokenSecretAndExpiration,
+  //   );
+
+  //   // Store refresh token in database
+  //   await this.create({
+  //     jti: refreshJti,
+  //     type: TokenType.REFRESH,
+  //     userId: user.id,
+  //     email: userEmail,
+  //     expiresAt: refreshTokenExpires.toDate(),
+  //   });
+
+  //   return {
+  //     accessToken,
+  //     refreshToken,
+  //   };
+  // }
+
   async generateAuthToken(
     userId: number,
     userRole: string,
@@ -64,84 +118,107 @@ export class TokenService {
   ): Promise<object> {
     const refreshJti: string = uuidv4();
 
-    // Calculate expiration times
-    const accessTokenExpires = moment().add(
-      this.configService.get('AUTH_JWT_TOKEN_EXPIRES_IN_DAYS'),
-      'minutes',
-    );
-    const refreshTokenExpires = moment().add(
-      this.configService.get('AUTH_REFRESH_TOKEN_EXPIRES_IN_DAYS'),
-      'days',
+    const accessTokenExpiry = this.configService.get<string>(
+      'JWT_ACCESS_TOKEN_EXPIRES_IN',
+    ); // "8h"
+    const refreshTokenExpiry = this.configService.get<string>(
+      'JWT_REFRESH_TOKEN_EXPIRES_IN',
+    ); // "30d"
+    const forgetPassExpiry = this.configService.get<string>(
+      'JWT_FORGET_PASSWORD_TOKEN_EXPIRES_IN',
+    ); // "5h"
+
+    // Let jsonwebtoken handle the string format directly! No need to calculate seconds manually.
+    const accessToken = await this.jwtService.signAsync(
+      { userId, userRole },
+      {
+        secret: this.configService.get('JWT_SECRET'),
+        expiresIn: accessTokenExpiry, // ← Just pass "8h" directly!
+      },
     );
 
-    // Prepare secrets and expiration configs
-    const accessTokenSecretAndExpiration = {
-      secret: this.configService.get('AUTH_JWT_SECRET'),
-      expiresIn: accessTokenExpires.diff(moment(), 'seconds'),
-    };
-    const refreshTokenSecretAndExpiration = {
-      secret: this.configService.get('AUTH_REFRESH_SECRET'),
-      expiresIn: refreshTokenExpires.diff(moment(), 'seconds'),
-    };
-
-    // Generate tokens
-    const accessToken = await this.generateToken(
-      userId,
-      userRole,
-      accessTokenSecretAndExpiration,
-    );
-    const refreshToken = await this.generateRefreshToken(
-      refreshJti,
-      refreshTokenSecretAndExpiration,
+    const refreshToken = await this.jwtService.signAsync(
+      { jti: refreshJti },
+      {
+        secret: this.configService.get('JWT_REFRESH_SECRET'),
+        expiresIn: refreshTokenExpiry, // ← "30d"
+      },
     );
 
-    // Store refresh token in database
+    // Store refresh token with correct expiry
+    const refreshExpiresAt = moment().add(refreshTokenExpiry).toDate();
+
     await this.create({
       jti: refreshJti,
       type: TokenType.REFRESH,
       userId: user.id,
       email: userEmail,
-      expiresAt: refreshTokenExpires.toDate(),
+      expiresAt: refreshExpiresAt,
     });
 
-    return {
-      accessToken,
-      refreshToken,
-    };
+    return { accessToken, refreshToken };
   }
+
+  // async generateForgetPasswordToken(
+  //   userId: number,
+  //   userRole: string,
+  // ): Promise<object> {
+  //   const forgetPasswordJti = uuidv4();
+
+  //   const expiresAt = moment().add(
+  //     this.configService.get('JWT_FORGET_PASSWORD_TOKEN_EXPIRES_IN'),
+  //     'minutes',
+  //   );
+
+  //   const secretAndExpiry = {
+  //     secret: this.configService.get('JWT_FORGET_PASSWORD_SECRET'),
+  //     expiresIn: expiresAt.diff(moment(), 'seconds'),
+  //   };
+
+  //   const token = await this.generateForgetPassToken(
+  //     userId,
+  //     forgetPasswordJti,
+  //     userRole,
+  //     secretAndExpiry,
+  //   );
+
+  //   await this.create({
+  //     jti: forgetPasswordJti,
+  //     type: TokenType.RESET_PASSWORD,
+  //     userId,
+  //     email: '', // Optional: populate if needed
+  //     expiresAt: expiresAt.toDate(),
+  //   });
+
+  //   return { forgetPasswordToken: token, forgetPasswordJti };
+  // }
 
   async generateForgetPasswordToken(
     userId: number,
     userRole: string,
   ): Promise<object> {
-    const forgetPasswordJti = uuidv4();
+    const jti = uuidv4();
+    const expiresIn = this.configService.get<string>(
+      'JWT_FORGET_PASSWORD_TOKEN_EXPIRES_IN',
+    ); // "5h"
 
-    const expiresAt = moment().add(
-      this.configService.get('FORGET_PASSWORD_TOKEN_EXPIRES_IN_MINS'),
-      'minutes',
-    );
-
-    const secretAndExpiry = {
-      secret: this.configService.get('FORGET_PASSWORD_JWT_SECRET'),
-      expiresIn: expiresAt.diff(moment(), 'seconds'),
-    };
-
-    const token = await this.generateForgetPassToken(
-      userId,
-      forgetPasswordJti,
-      userRole,
-      secretAndExpiry,
+    const token = await this.jwtService.signAsync(
+      { userId, jti, userRole },
+      {
+        secret: this.configService.get('JWT_FORGET_PASSWORD_SECRET'),
+        expiresIn, // ← Just pass "5h" directly
+      },
     );
 
     await this.create({
-      jti: forgetPasswordJti,
+      jti,
       type: TokenType.RESET_PASSWORD,
       userId,
-      email: '', // Optional: populate if needed
-      expiresAt: expiresAt.toDate(),
+      email: '',
+      expiresAt: moment().add(expiresIn).toDate(),
     });
 
-    return { forgetPasswordToken: token, forgetPasswordJti };
+    return { forgetPasswordToken: token, forgetPasswordJti: jti };
   }
 
   async verifyToken(token: string, tokenType: TokenType): Promise<object> {
@@ -149,19 +226,17 @@ export class TokenService {
 
     switch (tokenType) {
       case TokenType.ACCESS:
-        secret = this.configService.get('AUTH_JWT_SECRET')!;
+        secret = this.configService.get('JWT_SECRET')!;
         break;
       case TokenType.REFRESH:
-        secret = this.configService.get('AUTH_REFRESH_SECRET')!;
+        secret = this.configService.get('JWT_REFRESH_SECRET')!;
         break;
       case TokenType.RESET_PASSWORD:
-        secret = this.configService.get('FORGET_PASSWORD_JWT_SECRET')!;
+        secret = this.configService.get('JWT_FORGET_PASSWORD_SECRET')!;
         break;
       default:
         throw new UnauthorizedException({ message: 'Invalid Token Type' });
     }
-    console.log('Token -->', token);
-    console.log('Token Type-->', tokenType);
     try {
       const verifiedToken = await this.jwtService.verifyAsync(token, {
         secret,

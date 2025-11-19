@@ -10,7 +10,6 @@ import { TokenService } from '../token/token.service';
 import { LoginUserDto } from './dto/auth-login.dto';
 import { Auth, UserRole, UserStatus } from './entities/auth.entity';
 import { RefreshTokenDto } from '../token/dto/refresh-token.dto';
-import { ResetPasswordDto } from './dto/auth-reset-password.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
