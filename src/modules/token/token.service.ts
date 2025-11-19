@@ -56,60 +56,6 @@ export class TokenService {
     );
   }
 
-  // async generateAuthToken(
-  //   userId: number,
-  //   userRole: string,
-  //   userEmail: string,
-  //   user: Auth,
-  // ): Promise<object> {
-  //   const refreshJti: string = uuidv4();
-
-  //   // Calculate expiration times
-  //   const accessTokenExpires = moment().add(
-  //     this.configService.get('JWT_ACCESS_TOKEN_EXPIRES_IN'),
-  //     'minutes',
-  //   );
-  //   const refreshTokenExpires = moment().add(
-  //     this.configService.get('JWT_REFRESH_TOKEN_EXPIRES_IN'),
-  //     'days',
-  //   );
-
-  //   // Prepare secrets and expiration configs
-  //   const accessTokenSecretAndExpiration = {
-  //     secret: this.configService.get('JWT_SECRET'),
-  //     expiresIn: accessTokenExpires.diff(moment(), 'seconds'),
-  //   };
-  //   const refreshTokenSecretAndExpiration = {
-  //     secret: this.configService.get('JWT_REFRESH_SECRET'),
-  //     expiresIn: refreshTokenExpires.diff(moment(), 'seconds'),
-  //   };
-
-  //   // Generate tokens
-  //   const accessToken = await this.generateToken(
-  //     userId,
-  //     userRole,
-  //     accessTokenSecretAndExpiration,
-  //   );
-  //   const refreshToken = await this.generateRefreshToken(
-  //     refreshJti,
-  //     refreshTokenSecretAndExpiration,
-  //   );
-
-  //   // Store refresh token in database
-  //   await this.create({
-  //     jti: refreshJti,
-  //     type: TokenType.REFRESH,
-  //     userId: user.id,
-  //     email: userEmail,
-  //     expiresAt: refreshTokenExpires.toDate(),
-  //   });
-
-  //   return {
-  //     accessToken,
-  //     refreshToken,
-  //   };
-  // }
-
   async generateAuthToken(
     userId: number,
     userRole: string,
@@ -158,40 +104,6 @@ export class TokenService {
 
     return { accessToken, refreshToken };
   }
-
-  // async generateForgetPasswordToken(
-  //   userId: number,
-  //   userRole: string,
-  // ): Promise<object> {
-  //   const forgetPasswordJti = uuidv4();
-
-  //   const expiresAt = moment().add(
-  //     this.configService.get('JWT_FORGET_PASSWORD_TOKEN_EXPIRES_IN'),
-  //     'minutes',
-  //   );
-
-  //   const secretAndExpiry = {
-  //     secret: this.configService.get('JWT_FORGET_PASSWORD_SECRET'),
-  //     expiresIn: expiresAt.diff(moment(), 'seconds'),
-  //   };
-
-  //   const token = await this.generateForgetPassToken(
-  //     userId,
-  //     forgetPasswordJti,
-  //     userRole,
-  //     secretAndExpiry,
-  //   );
-
-  //   await this.create({
-  //     jti: forgetPasswordJti,
-  //     type: TokenType.RESET_PASSWORD,
-  //     userId,
-  //     email: '', // Optional: populate if needed
-  //     expiresAt: expiresAt.toDate(),
-  //   });
-
-  //   return { forgetPasswordToken: token, forgetPasswordJti };
-  // }
 
   async generateForgetPasswordToken(
     userId: number,
