@@ -154,13 +154,13 @@ export class AdminEventsService {
     // Keyword filtering
     if (searchInPageKeyword.keyword?.trim()) {
       queryBuilder.andWhere(
-        'LOWER(event.title) LIKE :keyword OR LOWER(event.description) LIKE :keyword',
+        'LOWER(Event.title) LIKE :keyword OR LOWER(Event.description) LIKE :keyword',
         { keyword: `%${searchInPageKeyword.keyword}%` },
       );
     }
 
     // Sorting by latest
-    queryBuilder.orderBy('event.createdAt', 'DESC');
+    queryBuilder.orderBy('Event.createdAt', 'DESC');
 
     // Pagination
     if (searchInPageKeyword.currentPage && searchInPageKeyword.limit) {
@@ -169,10 +169,9 @@ export class AdminEventsService {
       queryBuilder.skip(skip).take(searchInPageKeyword.limit);
     }
 
-    // Fetch paginated data
     const eventsData = await queryBuilder.getMany();
 
-    // Generate pre-signed URLs for each image
+    // Add S3 URLs
     for (const event of eventsData) {
       if (event.images && event.images.length > 0) {
         event.images = await Promise.all(
@@ -188,7 +187,6 @@ export class AdminEventsService {
       }
     }
 
-    // Get total count of all events
     const totalEvents = await this.EventRepository.count();
 
     return {
